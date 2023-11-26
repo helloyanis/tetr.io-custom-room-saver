@@ -36,7 +36,7 @@ function load(configname){
             }else if(document.querySelector(".room_config_item[data-index='${key}']").hasAttribute('data-song')){
               document.querySelector(".room_config_item[data-index='${key}']").setAttribute('data-song','${toLoad[key]}');
             }
-            else if(document.querySelector(".room_config_item[data-index='${key}']").type === 'input'){
+            else if(document.querySelector(".room_config_item[data-index='${key}']").tagName.toLowerCase() === 'input'){
               document.querySelector(".room_config_item[data-index='${key}']").value = '${toLoad[key]}';
             }else{
               document.querySelector(".room_config_item[data-index='${key}']").innerHTML = '${toLoad[key]}';
