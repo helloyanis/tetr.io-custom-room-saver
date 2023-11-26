@@ -3,13 +3,13 @@ function save(configname) {
   browser.tabs.executeScript({
     code:
       `Array.from(document.querySelectorAll(".room_config_item")).map(node => ({
-        value: node.type === 'checkbox' ? node.checked : node.value, 
-        dataIndex: node.getAttribute('data-index')
+        value: node.hasAttribute('data-song') ? node.getAttribute('data-song') : (node.type === 'checkbox' ? node.checked : (node.type === 'input' ? node.value : node.innerHTML)),
+        key: node.getAttribute('data-index')
       }))`
   }).then(saved => {
     var config = {};
     saved[0].forEach((item) => {
-      config[item.dataIndex] = item.value;
+      config[item.key] = item.value;
     });
     LS.set({[configname]: JSON.stringify(config)});
     getAllNames();
@@ -20,19 +20,28 @@ function load(configname){
   LS.get(configname).then(response => {
     toLoad = JSON.parse(response[configname]);
     Object.keys(toLoad).forEach(key => {
-      console.log(toLoad[key]);
+      console.log(key + " - " + toLoad[key]);
       browser.tabs.executeScript({
         code:
           `if(document.querySelector(".room_config_item[data-index='${key}']").type === 'checkbox'){
-            document.querySelector(".room_config_item[data-index='${key}']").checked = ${toLoad[key]};
+              document.querySelector(".room_config_item[data-index='${key}']").checked = ${toLoad[key]};
+            }else if(document.querySelector(".room_config_item[data-index='${key}']").hasAttribute('data-song')){
+              document.querySelector(".room_config_item[data-index='${key}']").setAttribute('data-song','${toLoad[key]}');
+            }
+            else if(document.querySelector(".room_config_item[data-index='${key}']").type === 'input'){
+              document.querySelector(".room_config_item[data-index='${key}']").value = '${toLoad[key]}';
             }else{
-              document.querySelector(".room_config_item[data-index='${key}']").value = ${toLoad[key]};
-            }`
+              document.querySelector(".room_config_item[data-index='${key}']").innerHTML = '${toLoad[key]}';
+            
+            };`
       });
     });
     browser.tabs.executeScript({
       code:
-        `document.querySelector("#room_opts_save").setAttribute('class','ns unsaved');`
+        `document.querySelectorAll(".room_config_row").forEach(node => {
+          node.classList.add('unsaved');
+        });
+        document.querySelector("#room_opts_save").classList.add('unsaved');`
     });
     document.body.innerHTML = "<h1>Loaded! Don't forget to save.</h1>";
   });
@@ -75,7 +84,7 @@ function clickhandler(configname){
   document.querySelector("#load").addEventListener("click", function(){
     browser.tabs.executeScript({
       code:
-        `document.querySelector("#room_content_room").offsetParent!=null;`
+        `document.querySelector("#room_opts_save").offsetParent!=null;`
     }).then(response => {
       console.log(response);
     if (!response[0]){
@@ -108,7 +117,7 @@ document.querySelector("#save").addEventListener("click", function(){
   }
   browser.tabs.executeScript({
     code:
-      `document.querySelector("#room_content_room").offsetParent!=null;`
+      `document.querySelector("#room_opts_save").offsetParent!=null;`
   }).then(response => {
     if (!response[0]) {
     document.body.innerHTML = "<h1>❌ Cannot find the config menu on the page!<br>Enter a room first!</h1>";
